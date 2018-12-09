@@ -38,4 +38,37 @@ c.execute("select AA.name, Sum(ViewCount) as Page_views\
 authors = c.fetchall()
 for author in authors:
     print(author[0] + ' -- ' + str(author[1]) + ' views')
+
+print('')
+print('3- On which days did more than 1% of requests lead to errors? ')
+'#1 get Total number of all requests per day and save the result in view'
+c.execute("create view AllRequests as\
+           select date(time) as date, Count(Status) as requests\
+           from log\
+           group by date")
+
+'#2 get the total number of Error Request per day and save the result in view'
+c.execute("create view ErrorRequests as \
+           select date(time) as date, count(status) as Error_requests\
+           from log\
+           where (status like '4%' or status like '5%')\
+           group by date\
+           order by date")
+
+'#3 Join Both Views to Calculate the percentage of Error'
+c.execute("select TO_CHAR(AllRequests.date,'Monthdd,yyyy') as RequestsDate,\
+           AllRequests.Requests, ErrorRequests.Error_Requests , \
+           round(((cast(ErrorRequests.Error_Requests as decimal)\
+           /AllRequests.requests)*100),2)as Error_Percentage \
+           from AllRequests, ErrorRequests\
+           where  AllRequests.date =  ErrorRequests.date\
+           and  (round(((cast(ErrorRequests.Error_Requests as decimal)\
+           /AllRequests.requests)*100),2) > 1 )\
+           order by ErrorRequests.Error_Requests desc")
+
+Joined_Status = c.fetchall()
+for JS in Joined_Status:
+    print(str(JS[0]) + ' -- ' + str(JS[3]) + '% errors')
+print('')
+
 db.close()
