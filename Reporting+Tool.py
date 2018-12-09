@@ -18,4 +18,24 @@ c.execute("select articles.title,\
 Articlas = c.fetchall()
 for Artical in Articlas:
     print(Artical[0] + ' -- ' + str(Artical[1]) + ' views')
+
+print('')
+print('2-  Who are the most popular article authors of all time?')
+c.execute("select AA.name, Sum(ViewCount) as Page_views\
+           from\
+             (select authors.name,articles.slug\
+              from authors, articles\
+              where authors.id = articles.author)AA\
+          left join \
+             (select articles.slug, count(log.ip) as ViewCount\
+              from articles, log\
+              where log.path like '%' || articles.slug\
+              group by articles.slug)AV\
+          on AA.slug = AV.slug\
+          group by AA.name\
+          order by Page_views desc")
+
+authors = c.fetchall()
+for author in authors:
+    print(author[0] + ' -- ' + str(author[1]) + ' views')
 db.close()
